@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Cart — SherwinMart</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<nav id="nav"></nav>
+<main>
+    <h1>Your cart</h1>
+    <div id="err" class="error" style="display:none;"></div>
+    <div id="cartLines"></div>
+    <div class="card" id="totalCard" style="display:none;">
+        <h2 id="total"></h2>
+        <button id="checkoutBtn">Place order (mock payment confirm)</button>
+    </div>
+</main>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+
+async function loadCart() {
+    try {
+        const { lines, total } = await Api.get("api/v1/cart");
+        const container = document.getElementById("cartLines");
+        if (!lines.length) {
+            container.innerHTML = "<p class='muted'>Your cart is empty. <a href='products.html'>Browse products</a>.</p>";
+            document.getElementById("totalCard").style.display = "none";
+            return;
+        }
+        container.innerHTML = lines.map(l => `
+            <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <strong>${escapeHtml(l.product.name)}</strong><br>
+                    <span class="muted">₹${l.product.price} × ${l.quantity} = ₹${l.lineTotal}</span>
+                </div>
+                <div>
+                    <input type="number" min="1" value="${l.quantity}" style="width:70px;display:inline-block;" data-id="${l.product.id}" class="qtyInput">
+                    <button class="secondary removeBtn" data-id="${l.product.id}">Remove</button>
+                </div>
+            </div>
+        `).join("");
+        document.getElementById("total").textContent = "Total: ₹" + total;
+        document.getElementById("totalCard").style.display = "block";
+
+        document.querySelectorAll(".qtyInput").forEach(input => {
+            input.addEventListener("change", async () => {
+                await Api.put("api/v1/cart", { productId: Number(input.dataset.id), quantity: Number(input.value) });
+                loadCart();
+            });
+        });
+        document.querySelectorAll(".removeBtn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                await Api.del("api/v1/cart?productId=" + btn.dataset.id);
+                loadCart();
+            });
+        });
+    } catch (err) {
+        document.getElementById("err").textContent = err.message;
+        document.getElementById("err").style.display = "block";
+    }
+}
+
+document.getElementById("checkoutBtn").addEventListener("click", async () => {
+    try {
+        await Api.post("api/v1/orders", { mockPaymentConfirmed: true });
+        window.location.href = "orders.html";
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+loadCart();
+</script>
+</body>
+</html>

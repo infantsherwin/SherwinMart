@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Browse — SherwinMart</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<nav id="nav"></nav>
+<main>
+    <h1>Browse products</h1>
+    <div class="card">
+        <input type="text" id="q" placeholder="Search by keyword...">
+        <input type="text" id="category" placeholder="Filter by category (e.g. Electronics)">
+        <button id="searchBtn">Search</button>
+    </div>
+
+    <div id="sellerPanel" class="card" style="display:none;">
+        <h2>List a new product</h2>
+        <div id="listErr" class="error" style="display:none;"></div>
+        <form id="listForm">
+            <input type="text" id="pName" placeholder="Name" required>
+            <textarea id="pDesc" placeholder="Description"></textarea>
+            <input type="number" id="pPrice" placeholder="Price" step="0.01" min="0.01" required>
+            <input type="number" id="pStock" placeholder="Stock quantity" min="0" required>
+            <input type="text" id="pCategory" placeholder="Category" required>
+            <input type="text" id="pImage" placeholder="Image URL (optional)">
+            <button type="submit">Add listing</button>
+        </form>
+    </div>
+
+    <div id="results" class="grid"></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+
+async function loadProducts() {
+    const q = document.getElementById("q").value;
+    const category = document.getElementById("category").value;
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    const products = await Api.get("api/v1/products?" + params.toString());
+    const results = document.getElementById("results");
+    results.innerHTML = products.map(p => `
+        <div class="card">
+            <h3>${escapeHtml(p.name)}</h3>
+            <p class="muted">${escapeHtml(p.category)}</p>
+            <p>${escapeHtml(p.description || "")}</p>
+            <p class="price">₹${p.price}</p>
+            <p class="badge">${p.stockQty} in stock</p>
+            <button data-id="${p.id}" class="addToCart">Add to cart</button>
+        </div>
+    `).join("") || "<p class='muted'>No products found.</p>";
+
+    document.querySelectorAll(".addToCart").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            try {
+                await Api.post("api/v1/cart", { productId: Number(btn.dataset.id), quantity: 1 });
+                btn.textContent = "Added ✓";
+            } catch (err) {
+                alert(err.message);
+            }
+        });
+    });
+}
+
+document.getElementById("searchBtn").addEventListener("click", loadProducts);
+
+currentUser().then(user => {
+    if (user && user.role === "SELLER") {
+        document.getElementById("sellerPanel").style.display = "block";
+    }
+});
+
+document.getElementById("listForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("listErr");
+    errEl.style.display = "none";
+    try {
+        await Api.post("api/v1/products", {
+            name: document.getElementById("pName").value,
+            description: document.getElementById("pDesc").value,
+            price: Number(document.getElementById("pPrice").value),
+            stockQty: Number(document.getElementById("pStock").value),
+            category: document.getElementById("pCategory").value,
+            imageUrl: document.getElementById("pImage").value
+        });
+        document.getElementById("listForm").reset();
+        loadProducts();
+    } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = "block";
+    }
+});
+
+loadProducts();
+</script>
+</body>
+</html>

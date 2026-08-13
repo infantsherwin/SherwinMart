@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Orders — SherwinMart</title>
+<link rel="stylesheet" href="css/style.css"></head>
+<body>
+<nav id="nav"></nav>
+<main>
+    <h1>Order history</h1>
+    <div id="sellerToggle" style="display:none;margin-bottom:14px;">
+        <button id="viewBuyer" class="secondary">My orders</button>
+        <button id="viewSeller" class="secondary">Incoming orders (as seller)</button>
+    </div>
+    <div id="orderList"></div>
+</main>
+<script src="js/api.js"></script>
+<script>
+renderNav();
+let asSeller = false;
+
+async function loadOrders() {
+    const orders = await Api.get("api/v1/orders" + (asSeller ? "?asSeller=true" : ""));
+    const list = document.getElementById("orderList");
+    list.innerHTML = orders.map(o => `
+        <div class="card">
+            <strong>Order #${o.id}</strong>
+            <span class="badge">${o.status}</span>
+            <p class="price">₹${o.totalAmount}</p>
+            <p class="muted">${new Date(o.createdAt).toLocaleString()}</p>
+        </div>
+    `).join("") || "<p class='muted'>No orders yet.</p>";
+}
+
+document.getElementById("viewBuyer").addEventListener("click", () => { asSeller = false; loadOrders(); });
+document.getElementById("viewSeller").addEventListener("click", () => { asSeller = true; loadOrders(); });
+
+currentUser().then(user => {
+    if (user && user.role === "SELLER") {
+        document.getElementById("sellerToggle").style.display = "block";
+    }
+});
+
+loadOrders();
+</script>
+</body>
+</html>
