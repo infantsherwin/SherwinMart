@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-/** Data-access abstraction for a buyer's cart (DAO pattern, Section 12). */
 public interface CartDAO {
 
     List<CartItem> findByUser(long userId) throws SQLException;
@@ -19,4 +18,6 @@ public interface CartDAO {
     boolean remove(long userId, long productId) throws SQLException;
 
     void clear(long userId) throws SQLException;
+
+    void clear(java.sql.Connection conn, long userId) throws SQLException;
 }
