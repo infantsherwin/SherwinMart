@@ -76,13 +76,10 @@ public class OrderService {
                 cartDAO.clear(conn, buyerId);
                 conn.commit();
                 return order;
-            } catch (ConflictException | ValidationException | RuntimeException e) {
+            } catch (ConflictException | RuntimeException e) {
                 conn.rollback();
                 if (e instanceof ConflictException) {
                     throw (ConflictException) e;
-                }
-                if (e instanceof ValidationException) {
-                    throw (ValidationException) e;
                 }
                 throw (RuntimeException) e;
             } finally {
