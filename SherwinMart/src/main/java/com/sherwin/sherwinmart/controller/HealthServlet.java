@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-/** GET /api/v1/health — Section 18 observability requirement. */
+/** GET /api/v1/health */
 @WebServlet("/api/v1/health")
 public class HealthServlet extends HttpServlet {
 
