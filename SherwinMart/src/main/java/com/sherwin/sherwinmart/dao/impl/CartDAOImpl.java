@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 
-/** JDBC implementation of {@link CartDAO}. Every statement is a PreparedStatement. */
 public class CartDAOImpl implements CartDAO {
 
     private final DataSource dataSource;
@@ -91,23 +90,4 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void clear(long userId) throws SQLException {
-        String sql = "DELETE FROM cart_items WHERE user_id = ?";
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setLong(1, userId);
-            ps.executeUpdate();
-        }
-    }
-
-    private CartItem mapRow(ResultSet rs) throws SQLException {
-        CartItem item = new CartItem();
-        item.setId(rs.getLong("id"));
-        item.setUserId(rs.getLong("user_id"));
-        item.setProductId(rs.getLong("product_id"));
-        item.setQuantity(rs.getInt("quantity"));
-        Timestamp ts = rs.getTimestamp("created_at");
-        item.setCreatedAt(ts != null ? ts.toLocalDateTime() : null);
-        return item;
-    }
-}
+    public void clear(long userI
