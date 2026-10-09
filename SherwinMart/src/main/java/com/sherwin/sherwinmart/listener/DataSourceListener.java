@@ -32,45 +32,10 @@ public class DataSourceListener implements ServletContextListener {
         config.setDriverClassName("org.h2.Driver");
 
         dataSource = new HikariDataSource(config);
-        LOG.info("HikariCP connection pool initialized against {}", config.getJdbcUrl());
+        LOG.info("HikariCP pool initialized against {}", config.getJdbcUrl());
 
         runStartupScripts();
     }
 
     @Override
-    public void contextDestroyed(ServletContextEvent sce) {
-        if (dataSource != null) {
-            dataSource.close();
-            LOG.info("HikariCP connection pool closed");
-        }
-    }
-
-    public static HikariDataSource getDataSource() {
-        if (dataSource == null) {
-            throw new IllegalStateException("DataSource not initialized — is the ServletContextListener registered?");
-        }
-        return dataSource;
-    }
-
-    private Properties loadProperties() {
-        Properties props = new Properties();
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("config.properties")) {
-            if (in != null) {
-                props.load(in);
-            } else {
-                LOG.warn("config.properties not found on classpath; falling back to in-memory H2 defaults");
-                props.setProperty("db.jdbc.url", "jdbc:h2:mem:sherwinmart;DB_CLOSE_DELAY=-1");
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to load config.properties", e);
-        }
-        return props;
-    }
-
-    private void runStartupScripts() {
-        try (Connection conn = dataSource.getConnection();
-                Statement stmt = conn.createStatement()) {
-
-            // Schema
-            String schema = readClasspathResource("schema.sql");
-            for (String sql : schema.split(";
+    pub
