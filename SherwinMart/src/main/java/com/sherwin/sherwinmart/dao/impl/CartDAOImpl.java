@@ -90,4 +90,29 @@ public class CartDAOImpl implements CartDAO {
     }
 
     @Override
-    public void clear(long userI
+    public void clear(long userId) throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            clear(conn, userId);
+        }
+    }
+
+    @Override
+    public void clear(Connection conn, long userId) throws SQLException {
+        String sql = "DELETE FROM cart_items WHERE user_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, userId);
+            ps.executeUpdate();
+        }
+    }
+
+    private CartItem mapRow(ResultSet rs) throws SQLException {
+        CartItem item = new CartItem();
+        item.setId(rs.getLong("id"));
+        item.setUserId(rs.getLong("user_id"));
+        item.setProductId(rs.getLong("product_id"));
+        item.setQuantity(rs.getInt("quantity"));
+        Timestamp ts = rs.getTimestamp("created_at");
+        item.setCreatedAt(ts != null ? ts.toLocalDateTime() : null);
+        return item;
+    }
+}
