@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
 
-/** JDBC implementation of {@link ProductDAO}. Every statement is a PreparedStatement. */
 public class ProductDAOImpl implements ProductDAO {
 
     private final DataSource dataSource;
@@ -136,9 +135,15 @@ public class ProductDAOImpl implements ProductDAO {
 
     @Override
     public boolean decrementStock(long productId, int quantity) throws SQLException {
+        try (Connection conn = dataSource.getConnection()) {
+            return decrementStock(conn, productId, quantity);
+        }
+    }
+
+    @Override
+    public boolean decrementStock(Connection conn, long productId, int quantity) throws SQLException {
         String sql = "UPDATE products SET stock_qty = stock_qty - ? WHERE id = ? AND stock_qty >= ?";
-        try (Connection conn = dataSource.getConnection();
-                PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, quantity);
             ps.setLong(2, productId);
             ps.setInt(3, quantity);
