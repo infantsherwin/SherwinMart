@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-/** Data-access abstraction for product listings (DAO pattern, Section 12). */
 public interface ProductDAO {
 
     Product create(Product product) throws SQLException;
@@ -21,4 +20,6 @@ public interface ProductDAO {
     boolean delete(long id, long sellerId) throws SQLException;
 
     boolean decrementStock(long productId, int quantity) throws SQLException;
+
+    boolean decrementStock(java.sql.Connection conn, long productId, int quantity) throws SQLException;
 }
