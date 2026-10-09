@@ -9,7 +9,7 @@ import com.sherwin.sherwinmart.util.PasswordUtil;
 import com.sherwin.sherwinmart.util.ValidationUtil;
 import java.sql.SQLException;
 
-/** Business rules for registration and login (F1). No JDBC here — the DAO owns SQL. */
+/** Business rules for registration and login (F1). No JDBC here - the DAO owns SQL. */
 public class UserService {
 
     private final UserDAO userDAO;
@@ -36,14 +36,11 @@ public class UserService {
             throw new ValidationException("role", "Role must be BUYER or SELLER");
         }
         if (role == User.Role.ADMIN) {
-            // F1: admin is seed-only, never self-registered.
             throw new ValidationException("role", "Role must be BUYER or SELLER");
         }
-
         if (userDAO.findByEmail(email).isPresent()) {
             throw new ConflictException("An account with this email already exists");
         }
-
         User user = new User();
         user.setName(name.trim());
         user.setEmail(email.trim().toLowerCase());
