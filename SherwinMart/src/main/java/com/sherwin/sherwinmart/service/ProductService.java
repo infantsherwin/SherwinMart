@@ -9,7 +9,7 @@ import com.sherwin.sherwinmart.util.ValidationUtil;
 import java.sql.SQLException;
 import java.util.List;
 
-/** Business rules for product listings (F2, F3). No JDBC here — the DAO owns SQL. */
+/** Business rules for product listings (F2, F3). No JDBC here - the DAO owns SQL. */
 public class ProductService {
 
     private final ProductDAO productDAO;
