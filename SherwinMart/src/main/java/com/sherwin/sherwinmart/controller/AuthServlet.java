@@ -23,10 +23,7 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Handles F1: register, login, logout, and "who am I".
- * Thin controller — no SQL, no business rules; everything delegates to UserService.
- */
+/** Handles F1: register, login, logout, and "who am I". */
 @WebServlet({"/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/me"})
 public class AuthServlet extends HttpServlet {
 
@@ -43,7 +40,6 @@ public class AuthServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String path = req.getServletPath();
         resp.setContentType("application/json");
-
         if (path.endsWith("/register")) {
             handleRegister(req, resp);
         } else if (path.endsWith("/login")) {
@@ -92,18 +88,13 @@ public class AuthServlet extends HttpServlet {
         Map<?, ?> body = JsonUtil.gson().fromJson(req.getReader(), Map.class);
         try {
             User user = userService.login(str(body, "email"), str(body, "password"));
-
-            // Session fixation prevention — regenerate session ID on login (Section 2 rule 3).
             HttpSession oldSession = req.getSession(false);
-            if (oldSession != null) {
-                oldSession.invalidate();
-            }
+            if (oldSession != null) oldSession.invalidate();
             HttpSession session = req.getSession(true);
             session.setMaxInactiveInterval(30 * 60);
             session.setAttribute("userId", user.getId());
             session.setAttribute("email", user.getEmail());
             session.setAttribute("role", user.getRole().name());
-
             resp.getWriter().write(JsonUtil.gson().toJson(ApiResponse.success(UserResponseDTO.fromEntity(user))));
         } catch (ValidationException e) {
             writeError(resp, 400, "VALIDATION_ERROR", e.getMessage());
@@ -117,9 +108,7 @@ public class AuthServlet extends HttpServlet {
 
     private void handleLogout(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         HttpSession session = req.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
+        if (session != null) session.invalidate();
         resp.getWriter().write(JsonUtil.gson().toJson(ApiResponse.success(Map.of("loggedOut", true))));
     }
 
