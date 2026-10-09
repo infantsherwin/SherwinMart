@@ -13,11 +13,6 @@ import javax.servlet.annotation.WebListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Singleton owner of the HikariCP connection pool (Section 2 rule 5, Section 12 Singleton
- * pattern). No DriverManager.getConnection() call exists anywhere outside this class.
- * On startup, schema.sql and seed.sql are applied so the app runs immediately.
- */
 @WebListener
 public class DataSourceListener implements ServletContextListener {
 
@@ -75,30 +70,7 @@ public class DataSourceListener implements ServletContextListener {
     private void runStartupScripts() {
         try (Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement()) {
-            String schema = readClasspathResource("schema.sql");
-            for (String sql : schema.split(";")) {
-                if (!sql.trim().isEmpty()) {
-                    stmt.execute(sql);
-                }
-            }
-            String seed = readClasspathResource("seed.sql");
-            for (String sql : seed.split(";")) {
-                if (!sql.trim().isEmpty()) {
-                    stmt.execute(sql);
-                }
-            }
-            LOG.info("schema.sql and seed.sql applied successfully");
-        } catch (Exception e) {
-            LOG.error("Failed to run startup schema/seed scripts", e);
-        }
-    }
 
-    private String readClasspathResource(String name) throws IOException {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream(name)) {
-            if (in == null) {
-                throw new IOException("Resource not found: " + name);
-            }
-            return new String(in.readAllBytes());
-        }
-    }
-}
+            // Schema
+            String schema = readClasspathResource("schema.sql");
+            for (String sql : schema.split(";
