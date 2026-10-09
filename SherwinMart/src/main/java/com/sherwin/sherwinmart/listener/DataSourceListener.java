@@ -38,4 +38,59 @@ public class DataSourceListener implements ServletContextListener {
     }
 
     @Override
-    pub
+    public void contextDestroyed(ServletContextEvent sce) {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+            LOG.info("HikariCP pool closed");
+        }
+    }
+
+    private Properties loadProperties() {
+        Properties props = new Properties();
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+            if (is != null) {
+                props.load(is);
+            } else {
+                LOG.warn("config.properties not found, using defaults");
+            }
+        } catch (IOException e) {
+            LOG.error("Failed to load config.properties", e);
+        }
+        return props;
+    }
+
+    private void runStartupScripts() {
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
+
+            InputStream schemaStream = getClass().getClassLoader().getResourceAsStream("schema.sql");
+            InputStream seedStream = getClass().getClassLoader().getResourceAsStream("seed.sql");
+
+            if (schemaStream != null) {
+                String schema = new String(schemaStream.readAllBytes());
+                for (String sql : schema.split(";")) {
+                    if (!sql.trim().isEmpty()) {
+                        stmt.execute(sql);
+                    }
+                }
+                LOG.info("Schema loaded");
+            }
+
+            if (seedStream != null) {
+                String seed = new String(seedStream.readAllBytes());
+                for (String sql : seed.split(";")) {
+                    if (!sql.trim().isEmpty()) {
+                        stmt.execute(sql);
+                    }
+                }
+                LOG.info("Seed data loaded");
+            }
+        } catch (Exception e) {
+            LOG.error("Failed to run startup scripts", e);
+        }
+    }
+
+    public static HikariDataSource getDataSource() {
+        return dataSource;
+    }
+}
