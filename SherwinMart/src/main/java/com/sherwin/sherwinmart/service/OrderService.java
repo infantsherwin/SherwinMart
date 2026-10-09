@@ -14,12 +14,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-/**
- * Business rules for checkout and order history (F5, F6).
- * placeOrder implements the D3 sequence: Servlet -> Service -> DAO -> DB, wrapped in a single
- * JDBC transaction so the order, its line items, stock decrements, and cart clear either all
- * commit or all roll back together.
- */
 public class OrderService {
 
     private final OrderDAOImpl orderDAO;
@@ -32,7 +26,6 @@ public class OrderService {
         this.productDAO = productDAO;
     }
 
-    /** Places an order from the buyer's current cart via a mock payment confirmation (F5). */
     public Order placeOrder(long buyerId, boolean mockPaymentConfirmed)
             throws ValidationException, ConflictException, SQLException {
         if (!mockPaymentConfirmed) {
@@ -48,7 +41,7 @@ public class OrderService {
             conn.setAutoCommit(false);
             try {
                 BigDecimal total = BigDecimal.ZERO;
-                // Pre-check stock for every line before writing anything.
+                java.util.Map<Long, Product> productMap = new java.util.LinkedHashMap<>();
                 for (CartItem ci : cartItems) {
                     Product product = productDAO.findById(ci.getProductId())
                             .orElseThrow(() -> new IllegalStateException("Product no longer exists"));
@@ -56,16 +49,17 @@ public class OrderService {
                         throw new ConflictException("Insufficient stock for: " + product.getName());
                     }
                     total = total.add(product.getPrice().multiply(BigDecimal.valueOf(ci.getQuantity())));
+                    productMap.put(ci.getProductId(), product);
                 }
 
                 Order order = new Order();
                 order.setBuyerId(buyerId);
-                order.setStatus(Order.Status.CONFIRMED); // mock payment succeeded
+                order.setStatus(Order.Status.CONFIRMED);
                 order.setTotalAmount(total);
                 orderDAO.createOrder(conn, order);
 
                 for (CartItem ci : cartItems) {
-                    Product product = productDAO.findById(ci.getProductId()).orElseThrow();
+                    Product product = productMap.get(ci.getProductId());
                     OrderItem item = new OrderItem();
                     item.setOrderId(order.getId());
                     item.setProductId(product.getId());
@@ -73,21 +67,24 @@ public class OrderService {
                     item.setUnitPrice(product.getPrice());
                     orderDAO.addOrderItem(conn, item);
 
-                    boolean decremented = productDAO.decrementStock(product.getId(), ci.getQuantity());
+                    boolean decremented = productDAO.decrementStock(conn, product.getId(), ci.getQuantity());
                     if (!decremented) {
                         throw new ConflictException("Insufficient stock for: " + product.getName());
                     }
                 }
 
-                cartDAO.clear(buyerId);
+                cartDAO.clear(conn, buyerId);
                 conn.commit();
                 return order;
-            } catch (ConflictException | RuntimeException e) {
+            } catch (ConflictException | ValidationException | RuntimeException e) {
                 conn.rollback();
                 if (e instanceof ConflictException) {
                     throw (ConflictException) e;
                 }
-                throw e;
+                if (e instanceof ValidationException) {
+                    throw (ValidationException) e;
+                }
+                throw (RuntimeException) e;
             } finally {
                 conn.setAutoCommit(true);
             }
