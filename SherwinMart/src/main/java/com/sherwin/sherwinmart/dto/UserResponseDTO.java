@@ -20,32 +20,17 @@ public class UserResponseDTO {
         this.role = role;
     }
 
-    /** Builder — required design pattern (Section 12) for constructing this DTO. */
+    /** Builder - required design pattern (Section 12) for constructing this DTO. */
     public static class Builder {
         private Long id;
         private String name;
         private String email;
         private String role;
 
-        public Builder id(Long id) {
-            this.id = id;
-            return this;
-        }
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder email(String email) {
-            this.email = email;
-            return this;
-        }
-
-        public Builder role(String role) {
-            this.role = role;
-            return this;
-        }
+        public Builder id(Long id) { this.id = id; return this; }
+        public Builder name(String name) { this.name = name; return this; }
+        public Builder email(String email) { this.email = email; return this; }
+        public Builder role(String role) { this.role = role; return this; }
 
         public UserResponseDTO build() {
             return new UserResponseDTO(id, name, email, role);
@@ -61,19 +46,8 @@ public class UserResponseDTO {
                 .build();
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getRole() {
-        return role;
-    }
+    public Long getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
+    public String getRole() { return role; }
 }
